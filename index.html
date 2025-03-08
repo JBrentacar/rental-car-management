@@ -843,10 +843,102 @@
       editCarModal.style.display = "none";
     });
     
-    // モーダル外クリックで閉じる
+// モーダル外クリックで閉じる
     window.addEventListener("click", (e) => {
       if (e.target === addCarModal) {
         addCarModal.style.display = "none";
       }
       if (e.target === editCarModal) {
-        editCarModal.style
+        editCarModal.style.display = "none";
+      }
+    });
+    
+    // 新規車両追加フォームの送信処理
+    document.getElementById("add-car-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById("car-name").value;
+      const carClass = document.getElementById("car-class").value;
+      const status = document.getElementById("car-status").value;
+      const remarks = document.getElementById("car-remarks").value;
+      const etc = document.getElementById("car-etc").checked;
+      const nav = document.getElementById("car-nav").checked;
+      const fourwd = document.getElementById("car-4wd").checked;
+      
+      showLoader();
+      try {
+        await addDoc(collection(db, "cars"), { 
+          name, 
+          "class": carClass, 
+          status, 
+          remarks, 
+          etc, 
+          nav, 
+          fourwd 
+        });
+        
+        e.target.reset();
+        addCarModal.style.display = "none";
+        loadCars();
+      } catch (error) {
+        console.error("車両追加エラー:", error);
+        alert("車両の追加に失敗しました。もう一度お試しください。");
+        hideLoader();
+      }
+    });
+    
+    // 車両編集フォームの送信処理
+    document.getElementById("edit-car-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const carId = document.getElementById("edit-car-id").value;
+      const name = document.getElementById("edit-car-name").value;
+      const carClass = document.getElementById("edit-car-class").value;
+      const remarks = document.getElementById("edit-car-remarks").value;
+      const etc = document.getElementById("edit-car-etc").checked;
+      const nav = document.getElementById("edit-car-nav").checked;
+      const fourwd = document.getElementById("edit-car-4wd").checked;
+      
+      showLoader();
+      try {
+        await updateDoc(doc(db, "cars", carId), { 
+          name, 
+          "class": carClass, 
+          remarks, 
+          etc, 
+          nav, 
+          fourwd 
+        });
+        
+        editCarModal.style.display = "none";
+        loadCars();
+      } catch (error) {
+        console.error("車両更新エラー:", error);
+        alert("車両情報の更新に失敗しました。もう一度お試しください。");
+        hideLoader();
+      }
+    });
+    
+    // エラーハンドリング：Firebaseへの接続エラーを表示
+    window.addEventListener("error", (e) => {
+      if (e.message.includes("Firebase") || e.message.includes("firestore")) {
+        console.error("Firebase接続エラー:", e);
+        alert("データベース接続に問題が発生しました。インターネット接続を確認してください。");
+      }
+    });
+    
+    // オフライン検出
+    window.addEventListener("offline", () => {
+      alert("インターネット接続が切断されました。接続が回復するまでデータは保存されません。");
+    });
+    
+    // スマホでのスクロール改善（iOS対応）
+    document.addEventListener('touchmove', function(e) {
+      if (e.target.closest('#add-car-modal .modal-content') || 
+          e.target.closest('#edit-car-modal .modal-content')) {
+        e.stopPropagation();
+      }
+    }, { passive: false });
+  </script>
+</body>
+</html>
