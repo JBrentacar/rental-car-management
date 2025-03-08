@@ -1,4 +1,847 @@
-     cars.forEach(car => {
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>レンタカー管理システム</title>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2980b9;
+      --success-color: #27ae60;
+      --warning-color: #f39c12;
+      --danger-color: #e74c3c;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --gray-color: #6c757d;
+      --light-gray-color: #e9ecef;
+      --white-color: #ffffff;
+      --shadow: 0 2px 5px rgba(0,0,0,0.1);
+      --radius: 8px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+
+    /* ヘッダースタイル */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--primary-color);
+      color: var(--white-color);
+      padding: 15px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    /* 新規追加ボタン */
+    #add-car-button {
+      background: var(--white-color);
+      color: var(--primary-color);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    #add-car-button:hover, #add-car-button:focus {
+      transform: scale(1.05);
+      background-color: var(--light-color);
+    }
+
+    #add-car-button:active {
+      transform: scale(0.95);
+    }
+
+    /* フィルタータブ */
+    .filter-tabs {
+      display: flex;
+      background: var(--white-color);
+      padding: 10px 5px;
+      margin-bottom: 15px;
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-tab {
+      padding: 8px 16px;
+      margin: 0 5px;
+      border-radius: 20px;
+      background: var(--light-color);
+      color: var(--gray-color);
+      border: none;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    /* フィルタータブのアクティブ状態 */
+    .filter-tab.active {
+      background: var(--primary-color);
+      color: var(--white-color);
+    }
+
+    /* 車両リストコンテナ */
+    #car-list {
+      padding: 15px;
+    }
+
+    /* 各車両アイテム */
+    .car-item {
+      background: var(--white-color);
+      border-radius: var(--radius);
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      border-left: 5px solid #ccc;
+    }
+
+    .car-item[data-status="貸出可"] {
+      border-left-color: var(--success-color);
+    }
+
+    .car-item[data-status="まもなく"] {
+      border-left-color: var(--warning-color);
+    }
+
+    .car-item[data-status="貸出不可"] {
+      border-left-color: var(--danger-color);
+    }
+
+    /* ステータス変更ボタン - 追加 */
+    .status-toggle {
+      position: absolute;
+      right: 45px;
+      top: 10px;
+      background: var(--light-gray-color);
+      border: none;
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      color: var(--dark-color);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .status-toggle:hover {
+      background: var(--light-color);
+    }
+
+    .status-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .car-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .car-status[data-status="貸出可"] {
+      background-color: rgba(39, 174, 96, 0.2);
+      color: var(--success-color);
+    }
+
+    .car-status[data-status="まもなく"] {
+      background-color: rgba(243, 156, 18, 0.2);
+      color: var(--warning-color);
+    }
+
+    .car-status[data-status="貸出不可"] {
+      background-color: rgba(231, 76, 60, 0.2);
+      color: var(--danger-color);
+    }
+
+    .car-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .car-class {
+      display: inline-block;
+      background: var(--light-color);
+      color: var(--gray-color);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-left: 8px;
+    }
+
+    .car-info {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--gray-color);
+    }
+
+    .car-remarks {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: var(--dark-color);
+      word-break: break-word;
+    }
+
+    .car-features {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .car-feature {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      background: var(--light-gray-color);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #ccc; /* 非アクティブ時はより薄い色に */
+    }
+
+    .car-feature.active {
+      background: rgba(52, 152, 219, 0.15);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    /* タイヤ切り替えボタン - 追加 */
+    .tire-toggle {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      background: var(--light-gray-color);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--gray-color);
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .tire-toggle.studless {
+      background: rgba(52, 152, 219, 0.15);
+      color: var(--primary-color);
+    }
+    
+    .tire-toggle:hover {
+      background: var(--light-color);
+    }
+
+    /* 削除ボタン */
+    .delete-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(231, 76, 60, 0.1);
+      color: var(--danger-color);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 10; /* 追加: 他の要素より前面に */
+    }
+
+    .delete-button:hover, .delete-button:focus {
+      background: rgba(231, 76, 60, 0.2);
+    }
+
+    /* モーダルウィンドウ */
+    #add-car-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: var(--white-color);
+      margin: 20px auto;
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      animation: modalFadeIn 0.3s;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--dark-color);
+    }
+
+    .close-modal {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--gray-color);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .close-modal:hover {
+      color: var(--danger-color);
+    }
+
+    /* フォームスタイル */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: var(--dark-color);
+    }
+
+    input[type="text"],
+    select {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .checkbox-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 15px;
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .radio-item input[type="radio"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    button[type="submit"] {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: var(--transition);
+    }
+
+    button[type="submit"]:hover {
+      background: var(--secondary-color);
+    }
+
+    /* タップしたときのフィードバック効果を抑制 */
+    @media (hover: none) {
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+    }
+
+    /* ロングプレスインジケーター */
+    .long-press-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .long-press-indicator.active {
+      opacity: 1;
+    }
+
+    /* モバイルでのユーザビリティ向上 */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.3rem;
+      }
+
+      .car-item {
+        padding: 12px;
+      }
+
+      .modal-content {
+        margin: 10px auto;
+        padding: 15px;
+      }
+      
+      .status-toggle {
+        right: 40px;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+      }
+    }
+
+    /* ローディングインジケーター */
+    .loader {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loader-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(52, 152, 219, 0.2);
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* 確認ダイアログ */
+    .confirm-dialog {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 3000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .confirm-content {
+      background: var(--white-color);
+      width: 90%;
+      max-width: 400px;
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      animation: modalFadeIn 0.2s;
+    }
+    
+    .confirm-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .confirm-message {
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    
+    .confirm-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .confirm-cancel {
+      padding: 8px 16px;
+      background: var(--light-color);
+      color: var(--gray-color);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    
+    .confirm-delete {
+      padding: 8px 16px;
+      background: var(--danger-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>レンタカー管理システム</h1>
+    <button id="add-car-button">＋</button>
+  </header>
+
+  <!-- フィルタータブ -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all">すべて</button>
+    <button class="filter-tab" data-filter="貸出可">貸出可</button>
+    <button class="filter-tab" data-filter="まもなく">まもなく</button>
+    <button class="filter-tab" data-filter="貸出不可">貸出不可</button>
+  </div>
+
+  <div id="car-list"></div>
+  <div class="long-press-indicator">詳細設定中...</div>
+
+  <!-- 新規車両追加モーダル -->
+  <div id="add-car-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>新しい車両追加</h2>
+        <button class="close-modal" id="close-modal">✕</button>
+      </div>
+      <form id="add-car-form">
+        <!-- 管理番号 -->
+        <div class="form-group">
+          <label for="management-number">管理番号</label>
+          <input type="text" id="management-number" required placeholder="例: 001">
+        </div>
+
+        <div class="form-group">
+          <label for="car-name">車両名</label>
+          <input type="text" id="car-name" required placeholder="例: トヨタ プリウス">
+        </div>
+        <div class="form-group">
+          <label for="car-class">クラス</label>
+          <select id="car-class">
+            <option value="J-1">J-1</option>
+            <option value="J-2">J-2</option>
+            <option value="J-3">J-3</option>
+            <option value="J-4">J-4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="car-status">初期状態</label>
+          <select id="car-status">
+            <option value="貸出可">貸出可</option>
+            <option value="まもなく">まもなく</option>
+            <option value="貸出不可">貸出不可</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="car-remarks">備考</label>
+          <input type="text" id="car-remarks" placeholder="任意の備考を入力">
+        </div>
+        <div class="form-group">
+          <label>オプション</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-etc">
+              <label for="car-etc">ETC</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-nav">
+              <label for="car-nav">ナビ</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-4wd">
+              <label for="car-4wd">4WD</label>
+            </div>
+          </div>
+        </div>
+        <!-- タイヤ種類 -->
+        <div class="form-group">
+          <label>タイヤ種類</label>
+          <div class="radio-group">
+            <div class="radio-item">
+              <input type="radio" id="car-normal-tire" name="tire-type" value="normal" checked>
+              <label for="car-normal-tire">ノーマルタイヤ</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="car-studless-tire" name="tire-type" value="studless">
+              <label for="car-studless-tire">スタッドレスタイヤ</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit">追加する</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 編集モーダル -->
+  <div id="edit-car-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>車両情報の編集</h2>
+        <button class="close-modal" id="close-edit-modal">✕</button>
+      </div>
+      <form id="edit-car-form">
+        <input type="hidden" id="edit-car-id">
+
+        <div class="form-group">
+          <label for="edit-management-number">管理番号</label>
+          <input type="text" id="edit-management-number" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-car-name">車両名</label>
+          <input type="text" id="edit-car-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-car-class">クラス</label>
+          <select id="edit-car-class">
+            <option value="J-1">J-1</option>
+            <option value="J-2">J-2</option>
+            <option value="J-3">J-3</option>
+            <option value="J-4">J-4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-car-remarks">備考</label>
+          <input type="text" id="edit-car-remarks">
+        </div>
+        <div class="form-group">
+          <label>オプション</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-etc">
+              <label for="edit-car-etc">ETC</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-nav">
+              <label for="edit-car-nav">ナビ</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-4wd">
+              <label for="edit-car-4wd">4WD</label>
+            </div>
+          </div>
+        </div>
+        <!-- タイヤ種類 編集用 -->
+        <div class="form-group">
+          <label>タイヤ種類</label>
+          <div class="radio-group">
+            <div class="radio-item">
+              <input type="radio" id="edit-car-normal-tire" name="edit-tire-type" value="normal">
+              <label for="edit-car-normal-tire">ノーマルタイヤ</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="edit-car-studless-tire" name="edit-tire-type" value="studless">
+              <label for="edit-car-studless-tire">スタッドレスタイヤ</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit">更新する</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 削除確認ダイアログ -->
+  <div class="confirm-dialog" id="delete-confirm">
+    <div class="confirm-content">
+      <div class="confirm-title">車両を削除</div>
+      <div class="confirm-message" id="delete-message">この車両を削除してもよろしいですか？</div>
+      <div class="confirm-buttons">
+        <button class="confirm-cancel" id="cancel-delete">キャンセル</button>
+        <button class="confirm-delete" id="confirm-delete">削除</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ローディングインジケーター -->
+  <div class="loader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <!-- Firebase SDK をモジュール形式で読み込み -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
+
+    // ※ Firebaseコンソールから取得した設定情報を貼り付け
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
+      authDomain: "jbrt-ddd38.firebaseapp.com",
+      projectId: "jbrt-ddd38",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 状態設定
+    const statuses = ["貸出可", "まもなく", "貸出不可"];
+
+    // DOM要素
+    const carListDiv = document.getElementById("car-list");
+    const addCarButton = document.getElementById("add-car-button");
+    const addCarModal = document.getElementById("add-car-modal");
+    const closeModalButton = document.getElementById("close-modal");
+    const editCarModal = document.getElementById("edit-car-modal");
+    const closeEditModalButton = document.getElementById("close-edit-modal");
+    const longPressIndicator = document.querySelector(".long-press-indicator");
+    const filterTabs = document.querySelectorAll(".filter-tab");
+    const loader = document.querySelector(".loader");
+    const deleteConfirm = document.getElementById("delete-confirm");
+    const deleteMessage = document.getElementById("delete-message");
+    const cancelDelete = document.getElementById("cancel-delete");
+    const confirmDelete = document.getElementById("confirm-delete");
+
+    // 選択したフィルターの状態を保持する配列
+    let selectedFilters = ["all"];
+    
+    // 削除用の一時変数
+    let carToDelete = null;
+
+    // ローディング表示/非表示
+    function showLoader() {
+      loader.style.display = "flex";
+    }
+
+    function hideLoader() {
+      loader.style.display = "none";
+    }
+
+    // 車両一覧を読み込み表示する
+    async function loadCars() {
+      showLoader();
+      carListDiv.innerHTML = "";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "cars"));
+        let cars = [];
+
+        querySnapshot.forEach((docSnapshot) => {
+          cars.push({
+            id: docSnapshot.id,
+            ...docSnapshot.data()
+          });
+        });
+
+        // フィルター適用 - 修正：複数選択対応
+        if (!selectedFilters.includes("all")) {
+          cars = cars.filter(car => selectedFilters.includes(car.status));
+        }
+
+        // 状態と名前でソート
+        const statusOrder = {
+          "貸出可": 0,
+          "まもなく": 1,
+          "貸出不可": 2
+        };
+
+        cars.sort((a, b) => {
+          if (statusOrder[a.status] !== statusOrder[b.status]) {
+            return statusOrder[a.status] - statusOrder[b.status];
+          }
+          // 名前でソート
+          return a.name.localeCompare(b.name, 'ja');
+        });
+
+        if (cars.length === 0) {
+          carListDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--gray-color);">
+              <p>表示する車両がありません</p>
+              <p style="font-size: 0.9rem; margin-top: 10px;">
+                ${selectedFilters.includes("all") 
+                  ? "新しい車両を追加してください" 
+                  : "フィルター条件を変更してみてください"}
+              </p>
+            </div>
+          `;
+          hideLoader();
+          return;
+        }
+
+        cars.forEach(car => {
           createCarElement(car);
         });
       } catch (error) {
@@ -14,8 +857,7 @@
       } finally {
         hideLoader();
       }
-      }
-    }
+         
 
     // 車両要素を作成する
     function createCarElement(car) {
