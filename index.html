@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>レンタカー管理システム</title>
+  <style>
+    /* 各車両表示用のスタイル */
+    .car-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .toggle-button {
+      padding: 5px 10px;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>レンタカー一覧</h1>
+  <div id="car-list"></div>
+
+  <!-- Firebase SDK をモジュール形式で読み込み -->
+  <script type="module">
+    // Firebaseの必要なモジュールをインポート
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
+
+    // ※ Firebaseコンソールから取得した設定情報に置き換えてください
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
+      authDomain: "jbrt-ddd38.firebaseapp.com",
+      projectId: "jbrt-ddd38",
+      // その他必要な設定情報があれば追加
+    };
+
+    // Firebaseの初期化
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ランクに応じた色の設定（例：1→赤、2→青、3→緑、4→黄色）
+    const rankColors = {
+      1: "red",
+      2: "blue",
+      3: "green",
+      4: "yellow"
+    };
+
+    // Firestoreから車両データを取得して画面に表示する関数
+    async function loadCars() {
+      const carListDiv = document.getElementById("car-list");
+      carListDiv.innerHTML = ""; // 表示内容をクリア
+      const querySnapshot = await getDocs(collection(db, "cars"));
+      querySnapshot.forEach((documentSnapshot) => {
+        const car = documentSnapshot.data();
+        // 車両情報表示用のdiv作成
+        const carDiv = document.createElement("div");
+        carDiv.className = "car-item";
+        carDiv.id = documentSnapshot.id;  // ドキュメントIDを設定
+
+        // 車両名、ランク、状態、備考の表示
+        carDiv.innerHTML = `<strong>${car.name}</strong> <br>
+                            ランク: ${car.rank} (表示色: ${rankColors[car.rank] || "gray"}) <br>
+                            状態: ${car.status} <br>
+                            備考: ${car.remarks}`;
+
+        // 状態変更ボタンの作成（タップ・クリックで状態をトグル）
+        const button = document.createElement("button");
+        button.textContent = "状態変更";
+        button.className = "toggle-button";
+        // ボタンの背景色はランクに応じた色に設定
+        button.style.backgroundColor = rankColors[car.rank] || "gray";
+
+        // ボタンのクリックイベント：ここでは「available」と「unavailable」をトグルする例です
+        button.addEventListener("click", async () => {
+          const newStatus = car.status === "available" ? "unavailable" : "available";
+          const carDocRef = doc(db, "cars", documentSnapshot.id);
+          await updateDoc(carDocRef, { status: newStatus });
+          // 更新後に再度データを読み込み、表示を更新
+          loadCars();
+        });
+        
+        carDiv.appendChild(document.createElement("br"));
+        carDiv.appendChild(button);
+        carListDiv.appendChild(carDiv);
+      });
+    }
+
+    // 初回の車両データロード
+    loadCars();
+  </script>
+</body>
+</html>
