@@ -34,30 +34,6 @@
       padding-bottom: 80px;
     }
     
-    /* ログイン用コンテナ */
-    #login-container {
-      padding: 40px;
-      text-align: center;
-    }
-    #login-container input[type="text"] {
-      padding: 10px;
-      font-size: 1rem;
-      margin-top: 10px;
-      width: 80%;
-      max-width: 300px;
-    }
-    #login-container button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    
-    /* 管理システム本体（認証後に表示） */
-    #protected-app {
-      display: none;
-    }
-    
     /* ヘッダースタイル */
     header {
       position: sticky;
@@ -265,7 +241,7 @@
     }
     
     /* モーダルウィンドウ */
-    #add-car-modal, #edit-car-modal {
+    #add-car-modal {
       display: none;
       position: fixed;
       top: 0;
@@ -463,229 +439,148 @@
   </style>
 </head>
 <body>
-  <!-- ログイン用UI（電話番号認証） -->
-  <div id="login-container">
-    <h2>電話番号認証でログイン</h2>
-    <!-- reCAPTCHA 用コンテナ（invisibleの場合も必要） -->
-    <div id="recaptcha-container"></div>
-    <input type="text" id="phone-number" placeholder="+81XXXXXXXXXX">
-    <button id="send-code-button">認証コード送信</button>
-    <br>
-    <input type="text" id="verification-code" placeholder="認証コード">
-    <button id="verify-code-button">認証コード確認</button>
-    <p id="login-error-message" style="color: red;"></p>
+  <header>
+    <h1>レンタカー管理システム</h1>
+    <button id="add-car-button">＋</button>
+  </header>
+  
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all">すべて</button>
+    <button class="filter-tab" data-filter="貸出可">貸出可</button>
+    <button class="filter-tab" data-filter="まもなく">まもなく</button>
+    <button class="filter-tab" data-filter="貸出中">貸出中</button>
   </div>
   
-  <!-- 認証済みユーザー向け管理システム -->
-  <div id="protected-app">
-    <header>
-      <h1>レンタカー管理システム</h1>
-      <button id="add-car-button">＋</button>
-    </header>
-    
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-filter="all">すべて</button>
-      <button class="filter-tab" data-filter="貸出可">貸出可</button>
-      <button class="filter-tab" data-filter="まもなく">まもなく</button>
-      <button class="filter-tab" data-filter="貸出中">貸出中</button>
-    </div>
-    
-    <div id="car-list"></div>
-    
-    <div class="long-press-indicator">詳細設定中...</div>
-    
-    <!-- 新規車両追加モーダル -->
-    <div id="add-car-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>新しい車両追加</h2>
-          <button class="close-modal" id="close-modal">✕</button>
+  <div id="car-list"></div>
+  
+  <div class="long-press-indicator">詳細設定中...</div>
+  
+  <!-- 新規車両追加モーダル -->
+  <div id="add-car-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>新しい車両追加</h2>
+        <button class="close-modal" id="close-modal">✕</button>
+      </div>
+      <form id="add-car-form">
+        <div class="form-group">
+          <label for="car-name">車両名</label>
+          <input type="text" id="car-name" required placeholder="例: トヨタ プリウス">
         </div>
-        <form id="add-car-form">
-          <div class="form-group">
-            <label for="car-name">車両名</label>
-            <input type="text" id="car-name" required placeholder="例: トヨタ プリウス">
-          </div>
-          <div class="form-group">
-            <label for="car-class">クラス</label>
-            <select id="car-class">
-              <option value="J-1">J-1</option>
-              <option value="J-2">J-2</option>
-              <option value="J-3">J-3</option>
-              <option value="J-4">J-4</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="car-status">初期状態</label>
-            <select id="car-status">
-              <option value="貸出可">貸出可</option>
-              <option value="まもなく">まもなく</option>
-              <option value="貸出中">貸出中</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="car-remarks">備考</label>
-            <input type="text" id="car-remarks" placeholder="任意の備考を入力">
-          </div>
-          <div class="form-group">
-            <label>オプション</label>
-            <div class="checkbox-group">
-              <div class="checkbox-item">
-                <input type="checkbox" id="car-etc">
-                <label for="car-etc">ETC</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="car-nav">
-                <label for="car-nav">ナビ</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="car-4wd">
-                <label for="car-4wd">4WD</label>
-              </div>
+        <div class="form-group">
+          <label for="car-class">クラス</label>
+          <select id="car-class">
+            <option value="J-1">J-1</option>
+            <option value="J-2">J-2</option>
+            <option value="J-3">J-3</option>
+            <option value="J-4">J-4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="car-status">初期状態</label>
+          <select id="car-status">
+            <option value="貸出可">貸出可</option>
+            <option value="まもなく">まもなく</option>
+            <option value="貸出中">貸出中</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="car-remarks">備考</label>
+          <input type="text" id="car-remarks" placeholder="任意の備考を入力">
+        </div>
+        <div class="form-group">
+          <label>オプション</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-etc">
+              <label for="car-etc">ETC</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-nav">
+              <label for="car-nav">ナビ</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="car-4wd">
+              <label for="car-4wd">4WD</label>
             </div>
           </div>
-          <button type="submit">追加する</button>
-        </form>
-      </div>
-    </div>
-    
-    <!-- 編集モーダル -->
-    <div id="edit-car-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>車両情報の編集</h2>
-          <button class="close-modal" id="close-edit-modal">✕</button>
         </div>
-        <form id="edit-car-form">
-          <input type="hidden" id="edit-car-id">
-          <div class="form-group">
-            <label for="edit-car-name">車両名</label>
-            <input type="text" id="edit-car-name" required>
-          </div>
-          <div class="form-group">
-            <label for="edit-car-class">クラス</label>
-            <select id="edit-car-class">
-              <option value="J-1">J-1</option>
-              <option value="J-2">J-2</option>
-              <option value="J-3">J-3</option>
-              <option value="J-4">J-4</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="edit-car-remarks">備考</label>
-            <input type="text" id="edit-car-remarks">
-          </div>
-          <div class="form-group">
-            <label>オプション</label>
-            <div class="checkbox-group">
-              <div class="checkbox-item">
-                <input type="checkbox" id="edit-car-etc">
-                <label for="edit-car-etc">ETC</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="edit-car-nav">
-                <label for="edit-car-nav">ナビ</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="edit-car-4wd">
-                <label for="edit-car-4wd">4WD</label>
-              </div>
-            </div>
-          </div>
-          <button type="submit">更新する</button>
-        </form>
-      </div>
-    </div>
-    
-    <!-- ローディングインジケーター -->
-    <div class="loader">
-      <div class="loader-spinner"></div>
+        <button type="submit">追加する</button>
+      </form>
     </div>
   </div>
   
-  <!-- Firebase SDK（Auth, Firestore, App） -->
+  <!-- 編集モーダル -->
+  <div id="edit-car-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>車両情報の編集</h2>
+        <button class="close-modal" id="close-edit-modal">✕</button>
+      </div>
+      <form id="edit-car-form">
+        <input type="hidden" id="edit-car-id">
+        <div class="form-group">
+          <label for="edit-car-name">車両名</label>
+          <input type="text" id="edit-car-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-car-class">クラス</label>
+          <select id="edit-car-class">
+            <option value="J-1">J-1</option>
+            <option value="J-2">J-2</option>
+            <option value="J-3">J-3</option>
+            <option value="J-4">J-4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-car-remarks">備考</label>
+          <input type="text" id="edit-car-remarks">
+        </div>
+        <div class="form-group">
+          <label>オプション</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-etc">
+              <label for="edit-car-etc">ETC</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-nav">
+              <label for="edit-car-nav">ナビ</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="edit-car-4wd">
+              <label for="edit-car-4wd">4WD</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit">更新する</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- ローディングインジケーター -->
+  <div class="loader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <!-- Firebase SDK をモジュール形式で読み込み -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
     import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
-    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 
-    // ※ Firebaseコンソールから取得した設定情報（Auth, Firestore 共通）
+    // ※ Firebaseコンソールから取得した設定情報
     const firebaseConfig = {
       apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
       authDomain: "jbrt-ddd38.firebaseapp.com",
       projectId: "jbrt-ddd38",
     };
 
-    // Firebase 初期化
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    // 電話番号認証用 reCAPTCHA（invisible）
-    window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response) => {
-        // reCAPTCHA 解決後のコールバック
-        console.log("reCAPTCHA solved");
-      }
-    }, auth);
-
-    // ログイン用DOM
-    const loginContainer = document.getElementById("login-container");
-    const protectedApp = document.getElementById("protected-app");
-    const sendCodeButton = document.getElementById("send-code-button");
-    const verifyCodeButton = document.getElementById("verify-code-button");
-    const loginErrorMessage = document.getElementById("login-error-message");
-
-    // 電話番号認証処理
-    sendCodeButton.addEventListener("click", () => {
-      const phoneNumber = document.getElementById("phone-number").value;
-      if (!phoneNumber) {
-        loginErrorMessage.textContent = "電話番号を入力してください";
-        return;
-      }
-      signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
-        .then((confirmationResult) => {
-          window.confirmationResult = confirmationResult;
-          loginErrorMessage.textContent = "認証コードを送信しました。SMSを確認してください。";
-        }).catch((error) => {
-          console.error("SMS送信エラー:", error);
-          loginErrorMessage.textContent = "認証コードの送信に失敗しました。";
-        });
-    });
-
-    verifyCodeButton.addEventListener("click", () => {
-      const code = document.getElementById("verification-code").value;
-      if (!code) {
-        loginErrorMessage.textContent = "認証コードを入力してください";
-        return;
-      }
-      window.confirmationResult.confirm(code)
-        .then((result) => {
-          // 認証成功時、ユーザー情報が result.user に入る
-          loginErrorMessage.textContent = "";
-          loginContainer.style.display = "none";
-          protectedApp.style.display = "block";
-          loadCars();
-        }).catch((error) => {
-          console.error("認証コード確認エラー:", error);
-          loginErrorMessage.textContent = "認証コードが正しくありません";
-        });
-    });
-
-    // onAuthStateChanged で認証状態の監視
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // すでに認証済みならログイン画面を隠してアプリ表示
-        loginContainer.style.display = "none";
-        protectedApp.style.display = "block";
-        loadCars();
-      }
-    });
 
     // 状態設定
     const statuses = ["貸出可", "まもなく", "貸出中"];
-
+    
     // DOM要素
     const carListDiv = document.getElementById("car-list");
     const addCarButton = document.getElementById("add-car-button");
@@ -806,6 +701,7 @@
       deleteButton.className = "delete-button";
       deleteButton.addEventListener("click", async (e) => {
         e.stopPropagation();
+        
         if (confirm(`${car.name}を削除してもよろしいですか？`)) {
           showLoader();
           try {
@@ -839,17 +735,20 @@
           longPressIndicator.classList.add("active");
           pressTimer = setTimeout(() => {
             triggerLongPress();
-          }, 300);
-        }, 400);
+          }, 300); // インジケーター表示後の追加の待ち時間
+        }, 400); // インジケーター表示までの時間
       });
       
       carDiv.addEventListener("touchend", (e) => {
         clearTimeout(pressTimer);
         longPressIndicator.classList.remove("active");
+        
         if (!longPressTriggered) {
+          // 短押しなら状態変更（サイクル）
           const currentIndex = statuses.indexOf(car.status);
           const nextIndex = (currentIndex + 1) % statuses.length;
           const newStatus = statuses[nextIndex];
+          
           showLoader();
           updateDoc(doc(db, "cars", car.id), { status: newStatus })
             .then(() => loadCars())
@@ -880,10 +779,12 @@
       carDiv.addEventListener("mouseup", (e) => {
         clearTimeout(pressTimer);
         longPressIndicator.classList.remove("active");
+        
         if (!longPressTriggered) {
           const currentIndex = statuses.indexOf(car.status);
           const nextIndex = (currentIndex + 1) % statuses.length;
           const newStatus = statuses[nextIndex];
+          
           showLoader();
           updateDoc(doc(db, "cars", car.id), { status: newStatus })
             .then(() => loadCars())
@@ -926,8 +827,8 @@
       });
     });
     
-    // 初期読み込み（認証済みの場合のみ）
-    // ※ onAuthStateChanged により既に loadCars() が呼ばれる
+    // 初期読み込み
+    loadCars();
     
     // 新規追加モーダルの表示・非表示制御
     addCarButton.addEventListener("click", () => {
@@ -948,9 +849,4 @@
         addCarModal.style.display = "none";
       }
       if (e.target === editCarModal) {
-        editCarModal.style.display = "none";
-      }
-    });
-  </script>
-</body>
-</html>
+        editCarModal.style
