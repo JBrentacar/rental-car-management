@@ -10,23 +10,40 @@
       padding: 10px;
       border: 1px solid #ccc;
     }
-    .toggle-button {
+    .toggle-button, .delete-button {
       padding: 5px 10px;
       border: none;
       color: white;
       cursor: pointer;
+      margin-right: 5px;
     }
   </style>
 </head>
 <body>
   <h1>レンタカー一覧</h1>
+  
+  <!-- 新しい車両を追加するフォーム -->
+  <h2>新しい車両を追加</h2>
+  <form id="add-car-form">
+    <label>車両名: <input type="text" id="car-name" required></label><br>
+    <label>ランク: <input type="number" id="car-rank" min="1" max="4" required></label><br>
+    <label>状態: 
+      <select id="car-status">
+        <option value="available">available</option>
+        <option value="unavailable">unavailable</option>
+      </select>
+    </label><br>
+    <label>備考: <input type="text" id="car-remarks"></label><br>
+    <button type="submit">追加</button>
+  </form>
+  
   <div id="car-list"></div>
 
   <!-- Firebase SDK をモジュール形式で読み込み -->
   <script type="module">
     // Firebaseの必要なモジュールをインポート
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
 
     // ※ Firebaseコンソールから取得した設定情報に置き換えてください
     const firebaseConfig = {
@@ -66,27 +83,53 @@
                             状態: ${car.status} <br>
                             備考: ${car.remarks}`;
 
-        // 状態変更ボタンの作成（タップ・クリックで状態をトグル）
-        const button = document.createElement("button");
-        button.textContent = "状態変更";
-        button.className = "toggle-button";
-        // ボタンの背景色はランクに応じた色に設定
-        button.style.backgroundColor = rankColors[car.rank] || "gray";
-
-        // ボタンのクリックイベント：ここでは「available」と「unavailable」をトグルする例です
-        button.addEventListener("click", async () => {
+        // 状態変更ボタンの作成（「available」と「unavailable」をトグル）
+        const toggleButton = document.createElement("button");
+        toggleButton.textContent = "状態変更";
+        toggleButton.className = "toggle-button";
+        toggleButton.style.backgroundColor = rankColors[car.rank] || "gray";
+        toggleButton.addEventListener("click", async () => {
           const newStatus = car.status === "available" ? "unavailable" : "available";
           const carDocRef = doc(db, "cars", documentSnapshot.id);
           await updateDoc(carDocRef, { status: newStatus });
-          // 更新後に再度データを読み込み、表示を更新
           loadCars();
         });
         
+        // 削除ボタンの作成
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除";
+        deleteButton.className = "delete-button";
+        deleteButton.style.backgroundColor = "darkgray";
+        deleteButton.addEventListener("click", async () => {
+          const carDocRef = doc(db, "cars", documentSnapshot.id);
+          await deleteDoc(carDocRef);
+          loadCars();
+        });
+
+        // ボタンを追加してから、車両表示エリアに追加
         carDiv.appendChild(document.createElement("br"));
-        carDiv.appendChild(button);
+        carDiv.appendChild(toggleButton);
+        carDiv.appendChild(deleteButton);
         carListDiv.appendChild(carDiv);
       });
     }
+
+    // 新規車両追加フォームの送信処理
+    document.getElementById("add-car-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      // 入力値を取得
+      const name = document.getElementById("car-name").value;
+      const rank = parseInt(document.getElementById("car-rank").value);
+      const status = document.getElementById("car-status").value;
+      const remarks = document.getElementById("car-remarks").value;
+
+      // Firestoreに新しい車両データを追加
+      await addDoc(collection(db, "cars"), { name, rank, status, remarks });
+      
+      // フォームのリセットと画面更新
+      e.target.reset();
+      loadCars();
+    });
 
     // 初回の車両データロード
     loadCars();
