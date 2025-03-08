@@ -82,12 +82,23 @@
     }
 
     /* フィルタータブ */
+    .filter-section {
+      background: var(--white-color);
+      box-shadow: var(--shadow);
+      margin-bottom: 15px;
+    }
+    
+    .filter-label {
+      padding: 5px 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-color);
+      background-color: var(--light-gray-color);
+    }
+    
     .filter-tabs {
       display: flex;
-      background: var(--white-color);
       padding: 10px 5px;
-      margin-bottom: 15px;
-      box-shadow: var(--shadow);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -195,12 +206,24 @@
 
     .car-class {
       display: inline-block;
-      background: var(--light-color);
-      color: var(--gray-color);
       padding: 3px 8px;
       border-radius: 4px;
       font-size: 0.8rem;
       margin-left: 8px;
+    }
+    
+    /* クラスごとの色分け - 追加 */
+    .car-class[data-class="J-1"],
+    .car-class[data-class="J-2"],
+    .car-class[data-class="J-3"] {
+      background-color: var(--warning-color);
+      color: var(--dark-color);
+    }
+    
+    .car-class[data-class="J-4"] {
+      background-color: var(--white-color);
+      color: var(--success-color);
+      border: 1px solid var(--success-color);
     }
 
     .car-info {
@@ -296,6 +319,22 @@
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
       z-index: 1000;
+      overflow-y: auto;
+    }
+
+    /* インライン編集モーダル */
+    .inline-edit-modal {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      background: var(--white-color);
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+      max-height: 80vh;
       overflow-y: auto;
     }
 
@@ -571,12 +610,27 @@
     <button id="add-car-button">＋</button>
   </header>
 
-  <!-- フィルタータブ -->
-  <div class="filter-tabs">
-    <button class="filter-tab active" data-filter="all">すべて</button>
-    <button class="filter-tab" data-filter="貸出可">貸出可</button>
-    <button class="filter-tab" data-filter="まもなく">まもなく</button>
-    <button class="filter-tab" data-filter="貸出不可">貸出不可</button>
+  <!-- フィルタータブ - 区分を追加 -->
+  <div class="filter-section">
+    <div class="filter-label">状況</div>
+    <div class="filter-tabs status-filters">
+      <button class="filter-tab active" data-filter="all" data-type="status">すべて</button>
+      <button class="filter-tab" data-filter="貸出可" data-type="status">貸出可</button>
+      <button class="filter-tab" data-filter="まもなく" data-type="status">まもなく</button>
+      <button class="filter-tab" data-filter="貸出不可" data-type="status">貸出不可</button>
+    </div>
+  </div>
+  
+  <!-- クラスフィルタータブ - 追加 -->
+  <div class="filter-section">
+    <div class="filter-label">クラス</div>
+    <div class="filter-tabs class-filters">
+      <button class="filter-tab active" data-filter="all" data-type="class">すべて</button>
+      <button class="filter-tab" data-filter="J-1" data-type="class">J-1</button>
+      <button class="filter-tab" data-filter="J-2" data-type="class">J-2</button>
+      <button class="filter-tab" data-filter="J-3" data-type="class">J-3</button>
+      <button class="filter-tab" data-filter="J-4" data-type="class">J-4</button>
+    </div>
   </div>
 
   <div id="car-list"></div>
@@ -657,74 +711,6 @@
     </div>
   </div>
 
-  <!-- 編集モーダル -->
-  <div id="edit-car-modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>車両情報の編集</h2>
-        <button class="close-modal" id="close-edit-modal">✕</button>
-      </div>
-      <form id="edit-car-form">
-        <input type="hidden" id="edit-car-id">
-
-        <div class="form-group">
-          <label for="edit-management-number">管理番号</label>
-          <input type="text" id="edit-management-number" required>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-car-name">車両名</label>
-          <input type="text" id="edit-car-name" required>
-        </div>
-        <div class="form-group">
-          <label for="edit-car-class">クラス</label>
-          <select id="edit-car-class">
-            <option value="J-1">J-1</option>
-            <option value="J-2">J-2</option>
-            <option value="J-3">J-3</option>
-            <option value="J-4">J-4</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="edit-car-remarks">備考</label>
-          <input type="text" id="edit-car-remarks">
-        </div>
-        <div class="form-group">
-          <label>オプション</label>
-          <div class="checkbox-group">
-            <div class="checkbox-item">
-              <input type="checkbox" id="edit-car-etc">
-              <label for="edit-car-etc">ETC</label>
-            </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="edit-car-nav">
-              <label for="edit-car-nav">ナビ</label>
-            </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="edit-car-4wd">
-              <label for="edit-car-4wd">4WD</label>
-            </div>
-          </div>
-        </div>
-        <!-- タイヤ種類 編集用 -->
-        <div class="form-group">
-          <label>タイヤ種類</label>
-          <div class="radio-group">
-            <div class="radio-item">
-              <input type="radio" id="edit-car-normal-tire" name="edit-tire-type" value="normal">
-              <label for="edit-car-normal-tire">ノーマルタイヤ</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" id="edit-car-studless-tire" name="edit-tire-type" value="studless">
-              <label for="edit-car-studless-tire">スタッドレスタイヤ</label>
-            </div>
-          </div>
-        </div>
-        <button type="submit">更新する</button>
-      </form>
-    </div>
-  </div>
-
   <!-- 削除確認ダイアログ -->
   <div class="confirm-dialog" id="delete-confirm">
     <div class="confirm-content">
@@ -757,18 +743,17 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 状態設定
-    const statuses = ["貸出可", "まもなく", "貸出不可"];
+    // 状態設定 - 順序変更
+    const statuses = ["貸出可", "貸出不可", "まもなく"];
 
     // DOM要素
     const carListDiv = document.getElementById("car-list");
     const addCarButton = document.getElementById("add-car-button");
     const addCarModal = document.getElementById("add-car-modal");
     const closeModalButton = document.getElementById("close-modal");
-    const editCarModal = document.getElementById("edit-car-modal");
-    const closeEditModalButton = document.getElementById("close-edit-modal");
     const longPressIndicator = document.querySelector(".long-press-indicator");
-    const filterTabs = document.querySelectorAll(".filter-tab");
+    const statusFilterTabs = document.querySelectorAll(".status-filters .filter-tab");
+    const classFilterTabs = document.querySelectorAll(".class-filters .filter-tab");
     const loader = document.querySelector(".loader");
     const deleteConfirm = document.getElementById("delete-confirm");
     const deleteMessage = document.getElementById("delete-message");
@@ -776,10 +761,14 @@
     const confirmDelete = document.getElementById("confirm-delete");
 
     // 選択したフィルターの状態を保持する配列
-    let selectedFilters = ["all"];
+    let selectedStatusFilters = ["all"];
+    let selectedClassFilters = ["all"];
     
     // 削除用の一時変数
     let carToDelete = null;
+    
+    // 状態更新した車両を記憶するための変数
+    let lastUpdatedCarId = null;
 
     // ローディング表示/非表示
     function showLoader() {
@@ -806,32 +795,50 @@
           });
         });
 
-        // フィルター適用 - 修正：複数選択対応
-        if (!selectedFilters.includes("all")) {
-          cars = cars.filter(car => selectedFilters.includes(car.status));
+        // フィルター適用 - ステータスとクラスで複数選択対応
+        let filteredCars = [...cars];
+        
+        // ステータスフィルター適用
+        if (!selectedStatusFilters.includes("all")) {
+          filteredCars = filteredCars.filter(car => selectedStatusFilters.includes(car.status));
+        }
+        
+        // クラスフィルター適用
+        if (!selectedClassFilters.includes("all")) {
+          filteredCars = filteredCars.filter(car => selectedClassFilters.includes(car.class));
         }
 
-        // 状態と名前でソート
+        // ソート - まず状況（貸出可、まもなく、貸出不可）でソート、次に管理番号でソート
         const statusOrder = {
           "貸出可": 0,
           "まもなく": 1,
           "貸出不可": 2
         };
 
-        cars.sort((a, b) => {
+        filteredCars.sort((a, b) => {
+          // まず状態でソート
           if (statusOrder[a.status] !== statusOrder[b.status]) {
             return statusOrder[a.status] - statusOrder[b.status];
           }
-          // 名前でソート
-          return a.name.localeCompare(b.name, 'ja');
+          
+          // 次に管理番号でソート（管理番号がない場合は最後尾に）
+          const numA = a.managementNumber ? Number(a.managementNumber) : Infinity;
+          const numB = b.managementNumber ? Number(b.managementNumber) : Infinity;
+          
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+          }
+          
+          // 数値に変換できない場合は文字列として比較
+          return String(a.managementNumber || "").localeCompare(String(b.managementNumber || ""));
         });
 
-        if (cars.length === 0) {
+        if (filteredCars.length === 0) {
           carListDiv.innerHTML = `
             <div style="text-align: center; padding: 40px 20px; color: var(--gray-color);">
               <p>表示する車両がありません</p>
               <p style="font-size: 0.9rem; margin-top: 10px;">
-                ${selectedFilters.includes("all") 
+                ${selectedStatusFilters.includes("all") && selectedClassFilters.includes("all") 
                   ? "新しい車両を追加してください" 
                   : "フィルター条件を変更してみてください"}
               </p>
@@ -841,9 +848,23 @@
           return;
         }
 
-        cars.forEach(car => {
+        filteredCars.forEach(car => {
           createCarElement(car);
         });
+        
+        // 最後に更新
+// 最後に更新した車両の位置までスクロール
+        if (lastUpdatedCarId) {
+          const updatedElement = document.getElementById(lastUpdatedCarId);
+          if (updatedElement) {
+            setTimeout(() => {
+              updatedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              updatedElement.classList.add('highlighted');
+              setTimeout(() => updatedElement.classList.remove('highlighted'), 1000);
+            }, 100);
+          }
+          lastUpdatedCarId = null;
+        }
       } catch (error) {
         console.error("車両データの読み込みエラー:", error);
         carListDiv.innerHTML = `
@@ -854,7 +875,7 @@
             </p>
           </div>
         `;
-    } finally {
+      } finally {
         hideLoader();
       }
     }
@@ -865,6 +886,7 @@
       carDiv.className = "car-item";
       carDiv.id = car.id;
       carDiv.setAttribute("data-status", car.status);
+      carDiv.setAttribute("data-class", car.class);
 
       // タイヤタイプがなければノーマルタイヤをデフォルトに設定
       const tireType = car.tireType || "normal";
@@ -874,7 +896,7 @@
         <div class="car-status" data-status="${car.status}">${car.status}</div>
         <div class="car-name">
           ${car.managementNumber ? `[${car.managementNumber}] ` : ""}${car.name}
-          <span class="car-class">${car.class}</span>
+          <span class="car-class" data-class="${car.class}">${car.class}</span>
         </div>
         <div class="car-features">
           <div class="car-feature ${car.etc ? 'active' : ''}">ETC</div>
@@ -888,6 +910,82 @@
         <button class="status-toggle" data-car-id="${car.id}">状態変更</button>
       `;
 
+      // インライン編集モーダルの作成
+      const editModalDiv = document.createElement("div");
+      editModalDiv.className = "inline-edit-modal";
+      editModalDiv.id = `edit-modal-${car.id}`;
+      
+      editModalDiv.innerHTML = `
+        <div class="modal-header">
+          <h2>車両情報の編集</h2>
+          <button class="close-modal" data-carid="${car.id}">✕</button>
+        </div>
+        <form class="edit-car-form" data-carid="${car.id}">
+          <input type="hidden" class="edit-car-id" value="${car.id}">
+
+          <div class="form-group">
+            <label for="edit-management-number-${car.id}">管理番号</label>
+            <input type="text" id="edit-management-number-${car.id}" class="edit-management-number" required value="${car.managementNumber || ''}">
+          </div>
+
+          <div class="form-group">
+            <label for="edit-car-name-${car.id}">車両名</label>
+            <input type="text" id="edit-car-name-${car.id}" class="edit-car-name" required value="${car.name}">
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-car-class-${car.id}">クラス</label>
+            <select id="edit-car-class-${car.id}" class="edit-car-class">
+              <option value="J-1" ${car.class === 'J-1' ? 'selected' : ''}>J-1</option>
+              <option value="J-2" ${car.class === 'J-2' ? 'selected' : ''}>J-2</option>
+              <option value="J-3" ${car.class === 'J-3' ? 'selected' : ''}>J-3</option>
+              <option value="J-4" ${car.class === 'J-4' ? 'selected' : ''}>J-4</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-car-remarks-${car.id}">備考</label>
+            <input type="text" id="edit-car-remarks-${car.id}" class="edit-car-remarks" value="${car.remarks || ''}">
+          </div>
+          
+          <div class="form-group">
+            <label>オプション</label>
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <input type="checkbox" id="edit-car-etc-${car.id}" class="edit-car-etc" ${car.etc ? 'checked' : ''}>
+                <label for="edit-car-etc-${car.id}">ETC</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="edit-car-nav-${car.id}" class="edit-car-nav" ${car.nav ? 'checked' : ''}>
+                <label for="edit-car-nav-${car.id}">ナビ</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="edit-car-4wd-${car.id}" class="edit-car-4wd" ${car.fourwd ? 'checked' : ''}>
+                <label for="edit-car-4wd-${car.id}">4WD</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>タイヤ種類</label>
+            <div class="radio-group">
+              <div class="radio-item">
+                <input type="radio" id="edit-car-normal-tire-${car.id}" name="edit-tire-type-${car.id}" class="edit-car-normal-tire" value="normal" ${tireType === 'normal' ? 'checked' : ''}>
+                <label for="edit-car-normal-tire-${car.id}">ノーマルタイヤ</label>
+              </div>
+              <div class="radio-item">
+                <input type="radio" id="edit-car-studless-tire-${car.id}" name="edit-tire-type-${car.id}" class="edit-car-studless-tire" value="studless" ${tireType === 'studless' ? 'checked' : ''}>
+                <label for="edit-car-studless-tire-${car.id}">スタッドレスタイヤ</label>
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit">更新する</button>
+        </form>
+      `;
+      
+      carDiv.appendChild(editModalDiv);
+
       // 状態変更ボタンのイベントリスナー
       const statusToggle = carDiv.querySelector('.status-toggle');
       statusToggle.addEventListener('click', (e) => {
@@ -896,6 +994,9 @@
         const currentIndex = statuses.indexOf(car.status);
         const nextIndex = (currentIndex + 1) % statuses.length;
         const newStatus = statuses[nextIndex];
+        
+        // 更新前に車両IDを記録
+        lastUpdatedCarId = car.id;
         
         showLoader();
         updateDoc(doc(db, "cars", car.id), { status: newStatus })
@@ -914,6 +1015,9 @@
         
         const currentType = tireToggle.getAttribute('data-tire-type');
         const newType = currentType === 'normal' ? 'studless' : 'normal';
+        
+        // 更新前に車両IDを記録
+        lastUpdatedCarId = car.id;
         
         showLoader();
         try {
@@ -943,6 +1047,56 @@
       });
       carDiv.appendChild(deleteButton);
 
+      // インライン編集モーダルの閉じるボタン
+      const closeEditModalButton = carDiv.querySelector('.close-modal');
+      closeEditModalButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const carId = e.target.getAttribute('data-carid');
+        const editModal = document.getElementById(`edit-modal-${carId}`);
+        editModal.style.display = 'none';
+      });
+      
+      // 編集フォームの送信処理
+      const editForm = carDiv.querySelector('.edit-car-form');
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const carId = e.target.getAttribute('data-carid');
+        
+        const managementNumber = carDiv.querySelector('.edit-management-number').value;
+        const name = carDiv.querySelector('.edit-car-name').value;
+        const carClass = carDiv.querySelector('.edit-car-class').value;
+        const remarks = carDiv.querySelector('.edit-car-remarks').value;
+        const etc = carDiv.querySelector('.edit-car-etc').checked;
+        const nav = carDiv.querySelector('.edit-car-nav').checked;
+        const fourwd = carDiv.querySelector('.edit-car-4wd').checked;
+        const tireType = carDiv.querySelector('.edit-car-normal-tire').checked ? 'normal' : 'studless';
+        
+        // 更新前に車両IDを記録
+        lastUpdatedCarId = carId;
+
+        showLoader();
+        try {
+          await updateDoc(doc(db, "cars", carId), {
+            managementNumber,
+            name,
+            class: carClass,
+            remarks,
+            etc,
+            nav,
+            fourwd,
+            tireType
+          });
+          
+          const editModal = document.getElementById(`edit-modal-${carId}`);
+          editModal.style.display = 'none';
+          loadCars();
+        } catch (error) {
+          console.error("車両更新エラー:", error);
+          alert("車両情報の更新に失敗しました。もう一度お試しください。");
+          hideLoader();
+        }
+      });
+
       // 長押しで詳細編集
       let pressTimer;
       let longPressTriggered = false;
@@ -951,13 +1105,19 @@
       const triggerLongPress = () => {
         longPressTriggered = true;
         longPressIndicator.classList.remove("active");
-        showEditModal(car);
+        
+        // インライン編集モーダルを表示
+        const editModal = document.getElementById(`edit-modal-${car.id}`);
+        editModal.style.display = 'block';
       };
 
       // タッチイベント（スマホ向け）
       carDiv.addEventListener("touchstart", (e) => {
-        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタンからの長押しは無視
-        if (e.target.closest('.status-toggle') || e.target.closest('.tire-toggle') || e.target.closest('.delete-button')) {
+        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタン、モーダル内からの長押しは無視
+        if (e.target.closest('.status-toggle') || 
+            e.target.closest('.tire-toggle') || 
+            e.target.closest('.delete-button') ||
+            e.target.closest('.inline-edit-modal')) {
           return;
         }
         
@@ -971,8 +1131,11 @@
       });
 
       carDiv.addEventListener("touchend", (e) => {
-        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタンからのタッチは無視
-        if (e.target.closest('.status-toggle') || e.target.closest('.tire-toggle') || e.target.closest('.delete-button')) {
+        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタン、モーダル内からのタッチは無視
+        if (e.target.closest('.status-toggle') || 
+            e.target.closest('.tire-toggle') || 
+            e.target.closest('.delete-button') ||
+            e.target.closest('.inline-edit-modal')) {
           return;
         }
         
@@ -987,8 +1150,11 @@
 
       // マウスイベント（PC向け）
       carDiv.addEventListener("mousedown", (e) => {
-        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタンからの長押しは無視
-        if (e.target.closest('.status-toggle') || e.target.closest('.tire-toggle') || e.target.closest('.delete-button')) {
+        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタン、モーダル内からの長押しは無視
+        if (e.target.closest('.status-toggle') || 
+            e.target.closest('.tire-toggle') || 
+            e.target.closest('.delete-button') ||
+            e.target.closest('.inline-edit-modal')) {
           return;
         }
         
@@ -1002,8 +1168,11 @@
       });
 
       carDiv.addEventListener("mouseup", (e) => {
-        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタンからのクリックは無視
-        if (e.target.closest('.status-toggle') || e.target.closest('.tire-toggle') || e.target.closest('.delete-button')) {
+        // 状態変更ボタンやタイヤ切り替えボタン、削除ボタン、モーダル内からのクリックは無視
+        if (e.target.closest('.status-toggle') || 
+            e.target.closest('.tire-toggle') || 
+            e.target.closest('.delete-button') ||
+            e.target.closest('.inline-edit-modal')) {
           return;
         }
         
@@ -1019,39 +1188,17 @@
       carListDiv.appendChild(carDiv);
     }
 
-    // 編集モーダルを表示
-    function showEditModal(car) {
-      document.getElementById("edit-car-id").value = car.id;
-      document.getElementById("edit-management-number").value = car.managementNumber || "";
-      document.getElementById("edit-car-name").value = car.name;
-      document.getElementById("edit-car-class").value = car.class;
-      document.getElementById("edit-car-remarks").value = car.remarks || "";
-      document.getElementById("edit-car-etc").checked = car.etc || false;
-      document.getElementById("edit-car-nav").checked = car.nav || false;
-      document.getElementById("edit-car-4wd").checked = car.fourwd || false;
-      
-      // タイヤ種類の設定
-      const tireType = car.tireType || "normal";
-      if (tireType === "studless") {
-        document.getElementById("edit-car-studless-tire").checked = true;
-      } else {
-        document.getElementById("edit-car-normal-tire").checked = true;
-      }
-
-      editCarModal.style.display = "block";
-    }
-
-    // フィルタータブの切り替え - 複数選択対応版
-    filterTabs.forEach(tab => {
+    // フィルタータブの切り替え - ステータス用
+    statusFilterTabs.forEach(tab => {
       tab.addEventListener("click", () => {
         const filter = tab.getAttribute("data-filter");
         
         // すべてタブの処理
         if (filter === "all") {
           // すべてタブがクリックされたら他のすべてのフィルターをクリア
-          filterTabs.forEach(t => t.classList.remove("active"));
+          statusFilterTabs.forEach(t => t.classList.remove("active"));
           tab.classList.add("active");
-          selectedFilters = ["all"];
+          selectedStatusFilters = ["all"];
           loadCars();
           return;
         }
@@ -1059,24 +1206,67 @@
         // すでに選択されているタブをクリックした場合（選択解除）
         if (tab.classList.contains("active")) {
           tab.classList.remove("active");
-          selectedFilters = selectedFilters.filter(f => f !== filter);
+          selectedStatusFilters = selectedStatusFilters.filter(f => f !== filter);
           
           // すべてのフィルターが解除された場合は「すべて」を選択状態に
-          if (selectedFilters.length === 0) {
-            filterTabs[0].classList.add("active");
-            selectedFilters = ["all"];
+          if (selectedStatusFilters.length === 0) {
+            statusFilterTabs[0].classList.add("active");
+            selectedStatusFilters = ["all"];
           }
         } else {
           // 新しいタブを選択した場合
           tab.classList.add("active");
           
           // 「すべて」タブが選択されていれば解除
-          if (selectedFilters.includes("all")) {
-            filterTabs[0].classList.remove("active");
-            selectedFilters = [filter];
+          if (selectedStatusFilters.includes("all")) {
+            statusFilterTabs[0].classList.remove("active");
+            selectedStatusFilters = [filter];
           } else {
             // 他のフィルターに追加
-            selectedFilters.push(filter);
+            selectedStatusFilters.push(filter);
+          }
+        }
+        
+        loadCars();
+      });
+    });
+    
+    // フィルタータブの切り替え - クラス用
+    classFilterTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const filter = tab.getAttribute("data-filter");
+        
+        // すべてタブの処理
+        if (filter === "all") {
+          // すべてタブがクリックされたら他のすべてのフィルターをクリア
+          classFilterTabs.forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          selectedClassFilters = ["all"];
+          loadCars();
+          return;
+        }
+        
+        // すでに選択されているタブをクリックした場合（選択解除）
+        if (tab.classList.contains("active")) {
+          tab.classList.remove("active");
+          selectedClassFilters = selectedClassFilters.filter(f => f !== filter);
+          
+          // すべてのフィルターが解除された場合は「すべて」を選択状態に
+          if (selectedClassFilters.length === 0) {
+            classFilterTabs[0].classList.add("active");
+            selectedClassFilters = ["all"];
+          }
+        } else {
+          // 新しいタブを選択した場合
+          tab.classList.add("active");
+          
+          // 「すべて」タブが選択されていれば解除
+          if (selectedClassFilters.includes("all")) {
+            classFilterTabs[0].classList.remove("active");
+            selectedClassFilters = [filter];
+          } else {
+            // 他のフィルターに追加
+            selectedClassFilters.push(filter);
           }
         }
         
@@ -1096,21 +1286,17 @@
       addCarModal.style.display = "none";
     });
 
-    closeEditModalButton.addEventListener("click", () => {
-      editCarModal.style.display = "none";
-    });
-
     // モーダル外クリックで閉じる
     window.addEventListener("click", (e) => {
       if (e.target === addCarModal) {
         addCarModal.style.display = "none";
       }
-      if (e.target === editCarModal) {
-        editCarModal.style.display = "none";
-      }
       if (e.target === deleteConfirm) {
         deleteConfirm.style.display = "none";
       }
+      
+      // インライン編集モーダルの外側をクリックしても閉じないようにする
+      // (車両アイテム内をクリックしたときのみ閉じる)
     });
 
     // 削除確認ダイアログのボタン
@@ -1152,7 +1338,7 @@
 
       showLoader();
       try {
-        await addDoc(collection(db, "cars"), {
+        const docRef = await addDoc(collection(db, "cars"), {
           managementNumber,
           name,
           class: carClass,
@@ -1164,47 +1350,15 @@
           tireType
         });
 
+        // 追加した車両IDを記録して、読み込み時にスクロール
+        lastUpdatedCarId = docRef.id;
+        
         e.target.reset();
         addCarModal.style.display = "none";
         loadCars();
       } catch (error) {
         console.error("車両追加エラー:", error);
         alert("車両の追加に失敗しました。もう一度お試しください。");
-        hideLoader();
-      }
-    });
-
-    // 車両編集フォームの送信処理
-    document.getElementById("edit-car-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const carId = document.getElementById("edit-car-id").value;
-      const managementNumber = document.getElementById("edit-management-number").value;
-      const name = document.getElementById("edit-car-name").value;
-      const carClass = document.getElementById("edit-car-class").value;
-      const remarks = document.getElementById("edit-car-remarks").value;
-      const etc = document.getElementById("edit-car-etc").checked;
-      const nav = document.getElementById("edit-car-nav").checked;
-      const fourwd = document.getElementById("edit-car-4wd").checked;
-      const tireType = document.querySelector('input[name="edit-tire-type"]:checked').value;
-
-      showLoader();
-      try {
-        await updateDoc(doc(db, "cars", carId), {
-          managementNumber,
-          name,
-          class: carClass,
-          remarks,
-          etc,
-          nav,
-          fourwd,
-          tireType
-        });
-
-        editCarModal.style.display = "none";
-        loadCars();
-      } catch (error) {
-        console.error("車両更新エラー:", error);
-        alert("車両情報の更新に失敗しました。もう一度お試しください。");
         hideLoader();
       }
     });
@@ -1225,11 +1379,29 @@
     // スマホでのスクロール改善（iOS対応）
     document.addEventListener('touchmove', function(e) {
       if (e.target.closest('#add-car-modal .modal-content') ||
-          e.target.closest('#edit-car-modal .modal-content') ||
+          e.target.closest('.inline-edit-modal') ||
           e.target.closest('#delete-confirm .confirm-content')) {
         e.stopPropagation();
       }
     }, { passive: false });
+    
+    // スタイルシートに動的なスタイルを追加
+    const style = document.createElement('style');
+    style.textContent = `
+      .car-item.highlighted {
+        animation: highlight 1s ease-in-out;
+      }
+      
+      @keyframes highlight {
+        0%, 100% { transform: scale(1); box-shadow: var(--shadow); }
+        50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); }
+      }
+      
+      .inline-edit-modal {
+        animation: modalFadeIn 0.2s;
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 </html>
