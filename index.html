@@ -9,31 +9,61 @@
       margin-bottom: 10px;
       padding: 10px;
       border: 1px solid #ccc;
+      position: relative; /* 削除ボタンを右上に配置するため */
     }
-    .toggle-button, .delete-button {
+    .toggle-button {
       padding: 5px 10px;
       border: none;
       color: white;
       cursor: pointer;
       margin-right: 5px;
     }
+    .delete-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    /* フィルター機能用のスタイル */
+    #filter-section {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>レンタカー一覧</h1>
-  
+  <h1>レンタカー管理システム</h1>
+
+  <!-- フィルター機能 -->
+  <div id="filter-section">
+    <h2>フィルター</h2>
+    <label>
+      表示:
+      <select id="filter-select">
+        <option value="all">全車両</option>
+        <option value="availableSoon">貸出可・まもなく</option>
+      </select>
+    </label>
+  </div>
+
   <!-- 新しい車両を追加するフォーム -->
   <h2>新しい車両を追加</h2>
   <form id="add-car-form">
     <label>車両名: <input type="text" id="car-name" required></label><br>
     <label>ランク: <input type="number" id="car-rank" min="1" max="4" required></label><br>
-    <label>状態: 
+    <label>状態:
       <select id="car-status">
-        <option value="available">available</option>
-        <option value="unavailable">unavailable</option>
+        <option value="貸出可">貸出可</option>
+        <option value="まもなく">まもなく</option>
+        <option value="貸出中">貸出中</option>
       </select>
     </label><br>
     <label>備考: <input type="text" id="car-remarks"></label><br>
+    <label>ETC: <input type="checkbox" id="car-etc"></label>
+    <label>ナビ: <input type="checkbox" id="car-nav"></label>
+    <label>４WD: <input type="checkbox" id="car-4wd"></label><br>
     <button type="submit">追加</button>
   </form>
   
@@ -41,75 +71,127 @@
 
   <!-- Firebase SDK をモジュール形式で読み込み -->
   <script type="module">
-    // Firebaseの必要なモジュールをインポート
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
     import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
 
-    // ※ Firebaseコンソールから取得した設定情報に置き換えてください
     const firebaseConfig = {
       apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
       authDomain: "jbrt-ddd38.firebaseapp.com",
       projectId: "jbrt-ddd38",
-      // その他必要な設定情報があれば追加
     };
 
-    // Firebaseの初期化
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ランクに応じた色の設定（例：1→赤、2→青、3→緑、4→黄色）
-    const rankColors = {
-      1: "red",
-      2: "blue",
-      3: "green",
-      4: "yellow"
+    // 状態とその背景色の設定
+    const statuses = ["貸出可", "まもなく", "貸出中"];
+    const statusColors = {
+      "貸出可": "lightgreen",
+      "まもなく": "lightyellow",
+      "貸出中": "lightcoral"
     };
 
-    // Firestoreから車両データを取得して画面に表示する関数
+    // フィルター機能：フィルター選択（"all" または "availableSoon"）
+    let currentFilter = "all";
+    const filterSelect = document.getElementById("filter-select");
+    filterSelect.addEventListener("change", () => {
+      currentFilter = filterSelect.value;
+      loadCars();
+    });
+
     async function loadCars() {
       const carListDiv = document.getElementById("car-list");
-      carListDiv.innerHTML = ""; // 表示内容をクリア
+      carListDiv.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "cars"));
       querySnapshot.forEach((documentSnapshot) => {
         const car = documentSnapshot.data();
-        // 車両情報表示用のdiv作成
+
+        // フィルター適用: "availableSoon"選択時は「貸出可」と「まもなく」のみ表示
+        if (currentFilter === "availableSoon" && !(car.status === "貸出可" || car.status === "まもなく")) {
+          return;
+        }
+
+        // 車両表示用のdiv作成
         const carDiv = document.createElement("div");
         carDiv.className = "car-item";
-        carDiv.id = documentSnapshot.id;  // ドキュメントIDを設定
+        carDiv.id = documentSnapshot.id;
+        carDiv.style.backgroundColor = statusColors[car.status] || "white";
 
-        // 車両名、ランク、状態、備考の表示
+        // 基本情報の表示
         carDiv.innerHTML = `<strong>${car.name}</strong> <br>
-                            ランク: ${car.rank} (表示色: ${rankColors[car.rank] || "gray"}) <br>
+                            ランク: ${car.rank} <br>
                             状態: ${car.status} <br>
-                            備考: ${car.remarks}`;
+                            備考: ${car.remarks} <br>`;
 
-        // 状態変更ボタンの作成（「available」と「unavailable」をトグル）
+        // ETC・ナビ・４WDの表示と更新機能
+        const optionsDiv = document.createElement("div");
+        
+        // ETC
+        const etcLabel = document.createElement("label");
+        etcLabel.textContent = "ETC: ";
+        const etcCheckbox = document.createElement("input");
+        etcCheckbox.type = "checkbox";
+        etcCheckbox.checked = car.etc || false;
+        etcCheckbox.addEventListener("change", async () => {
+          const carDocRef = doc(db, "cars", documentSnapshot.id);
+          await updateDoc(carDocRef, { etc: etcCheckbox.checked });
+        });
+        etcLabel.appendChild(etcCheckbox);
+        optionsDiv.appendChild(etcLabel);
+
+        // ナビ
+        const navLabel = document.createElement("label");
+        navLabel.textContent = " ナビ: ";
+        const navCheckbox = document.createElement("input");
+        navCheckbox.type = "checkbox";
+        navCheckbox.checked = car.nav || false;
+        navCheckbox.addEventListener("change", async () => {
+          const carDocRef = doc(db, "cars", documentSnapshot.id);
+          await updateDoc(carDocRef, { nav: navCheckbox.checked });
+        });
+        navLabel.appendChild(navCheckbox);
+        optionsDiv.appendChild(navLabel);
+
+        // ４WD
+        const fourwdLabel = document.createElement("label");
+        fourwdLabel.textContent = " ４WD: ";
+        const fourwdCheckbox = document.createElement("input");
+        fourwdCheckbox.type = "checkbox";
+        fourwdCheckbox.checked = car.fourwd || false;
+        fourwdCheckbox.addEventListener("change", async () => {
+          const carDocRef = doc(db, "cars", documentSnapshot.id);
+          await updateDoc(carDocRef, { fourwd: fourwdCheckbox.checked });
+        });
+        fourwdLabel.appendChild(fourwdCheckbox);
+        optionsDiv.appendChild(fourwdLabel);
+
+        carDiv.appendChild(optionsDiv);
+
+        // 状態変更ボタン：状態をサイクルする
         const toggleButton = document.createElement("button");
         toggleButton.textContent = "状態変更";
         toggleButton.className = "toggle-button";
-        toggleButton.style.backgroundColor = rankColors[car.rank] || "gray";
         toggleButton.addEventListener("click", async () => {
-          const newStatus = car.status === "available" ? "unavailable" : "available";
+          const currentIndex = statuses.indexOf(car.status);
+          const nextIndex = (currentIndex + 1) % statuses.length;
+          const newStatus = statuses[nextIndex];
           const carDocRef = doc(db, "cars", documentSnapshot.id);
           await updateDoc(carDocRef, { status: newStatus });
           loadCars();
         });
-        
-        // 削除ボタンの作成
+        carDiv.appendChild(toggleButton);
+
+        // 削除ボタン（右上に✕を表示）
         const deleteButton = document.createElement("button");
-        deleteButton.textContent = "削除";
+        deleteButton.textContent = "✕";
         deleteButton.className = "delete-button";
-        deleteButton.style.backgroundColor = "darkgray";
         deleteButton.addEventListener("click", async () => {
           const carDocRef = doc(db, "cars", documentSnapshot.id);
           await deleteDoc(carDocRef);
           loadCars();
         });
-
-        // ボタンを追加してから、車両表示エリアに追加
-        carDiv.appendChild(document.createElement("br"));
-        carDiv.appendChild(toggleButton);
         carDiv.appendChild(deleteButton);
+
         carListDiv.appendChild(carDiv);
       });
     }
@@ -117,21 +199,19 @@
     // 新規車両追加フォームの送信処理
     document.getElementById("add-car-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      // 入力値を取得
       const name = document.getElementById("car-name").value;
       const rank = parseInt(document.getElementById("car-rank").value);
       const status = document.getElementById("car-status").value;
       const remarks = document.getElementById("car-remarks").value;
-
-      // Firestoreに新しい車両データを追加
-      await addDoc(collection(db, "cars"), { name, rank, status, remarks });
+      const etc = document.getElementById("car-etc").checked;
+      const nav = document.getElementById("car-nav").checked;
+      const fourwd = document.getElementById("car-4wd").checked;
       
-      // フォームのリセットと画面更新
+      await addDoc(collection(db, "cars"), { name, rank, status, remarks, etc, nav, fourwd });
       e.target.reset();
       loadCars();
     });
 
-    // 初回の車両データロード
     loadCars();
   </script>
 </body>
