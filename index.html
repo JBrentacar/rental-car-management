@@ -4,20 +4,36 @@
   <meta charset="UTF-8">
   <title>レンタカー管理システム</title>
   <style>
+    body {
+      font-family: sans-serif;
+    }
+    header {
+      position: relative;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+    header h1 {
+      margin: 0;
+    }
+    /* 右上の新規追加ボタン */
+    #add-car-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
     /* 各車両表示用のスタイル */
     .car-item {
       margin-bottom: 10px;
       padding: 10px;
       border: 1px solid #ccc;
-      position: relative; /* 削除ボタンを右上に配置するため */
+      position: relative;
+      user-select: none;
     }
-    .toggle-button {
-      padding: 5px 10px;
-      border: none;
-      color: white;
-      cursor: pointer;
-      margin-right: 5px;
-    }
+    /* 削除ボタン：右上に✕を表示 */
     .delete-button {
       position: absolute;
       top: 5px;
@@ -27,53 +43,99 @@
       font-size: 16px;
       cursor: pointer;
     }
-    /* フィルター機能用のスタイル */
-    #filter-section {
-      margin-bottom: 20px;
+    /* モーダルウィンドウ（新規追加用）のスタイル */
+    #add-car-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+    #add-car-modal .modal-content {
+      background: white;
+      margin: 100px auto;
+      padding: 20px;
+      width: 300px;
+      position: relative;
+    }
+    #add-car-modal .close-modal {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
-  <h1>レンタカー管理システム</h1>
-
-  <!-- フィルター機能 -->
-  <div id="filter-section">
-    <h2>フィルター</h2>
-    <label>
-      表示:
-      <select id="filter-select">
-        <option value="all">全車両</option>
-        <option value="availableSoon">貸出可・まもなく</option>
-      </select>
-    </label>
-  </div>
-
-  <!-- 新しい車両を追加するフォーム -->
-  <h2>新しい車両を追加</h2>
-  <form id="add-car-form">
-    <label>車両名: <input type="text" id="car-name" required></label><br>
-    <label>ランク: <input type="number" id="car-rank" min="1" max="4" required></label><br>
-    <label>状態:
-      <select id="car-status">
-        <option value="貸出可">貸出可</option>
-        <option value="まもなく">まもなく</option>
-        <option value="貸出中">貸出中</option>
-      </select>
-    </label><br>
-    <label>備考: <input type="text" id="car-remarks"></label><br>
-    <label>ETC: <input type="checkbox" id="car-etc"></label>
-    <label>ナビ: <input type="checkbox" id="car-nav"></label>
-    <label>４WD: <input type="checkbox" id="car-4wd"></label><br>
-    <button type="submit">追加</button>
-  </form>
+  <header>
+    <h1>レンタカー管理システム</h1>
+    <button id="add-car-button">✚</button>
+  </header>
   
   <div id="car-list"></div>
+
+  <!-- 新規車両追加モーダル -->
+  <div id="add-car-modal">
+    <div class="modal-content">
+      <button class="close-modal" id="close-modal">✕</button>
+      <h2>新しい車両追加</h2>
+      <form id="add-car-form">
+        <label>
+          車両名:
+          <input type="text" id="car-name" required>
+        </label>
+        <label>
+          クラス:
+          <select id="car-class">
+            <option value="J-1">J-1</option>
+            <option value="J-2">J-2</option>
+            <option value="J-3">J-3</option>
+            <option value="J-4">J-4</option>
+          </select>
+        </label>
+        <label>
+          初期状態:
+          <select id="car-status">
+            <option value="貸出可">貸出可</option>
+            <option value="まもなく">まもなく</option>
+            <option value="貸出中">貸出中</option>
+          </select>
+        </label>
+        <label>
+          備考:
+          <input type="text" id="car-remarks">
+        </label>
+        <label>
+          ETC:
+          <input type="checkbox" id="car-etc">
+        </label>
+        <label>
+          ナビ:
+          <input type="checkbox" id="car-nav">
+        </label>
+        <label>
+          4WD:
+          <input type="checkbox" id="car-4wd">
+        </label>
+        <button type="submit">追加</button>
+      </form>
+    </div>
+  </div>
 
   <!-- Firebase SDK をモジュール形式で読み込み -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
     import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
 
+    // ※ Firebaseコンソールから取得した設定情報に置き換えてください
     const firebaseConfig = {
       apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
       authDomain: "jbrt-ddd38.firebaseapp.com",
@@ -91,128 +153,138 @@
       "貸出中": "lightcoral"
     };
 
-    // フィルター機能：フィルター選択（"all" または "availableSoon"）
-    let currentFilter = "all";
-    const filterSelect = document.getElementById("filter-select");
-    filterSelect.addEventListener("change", () => {
-      currentFilter = filterSelect.value;
-      loadCars();
-    });
-
+    // 車両一覧を読み込み表示する
     async function loadCars() {
       const carListDiv = document.getElementById("car-list");
       carListDiv.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "cars"));
       querySnapshot.forEach((documentSnapshot) => {
         const car = documentSnapshot.data();
-
-        // フィルター適用: "availableSoon"選択時は「貸出可」と「まもなく」のみ表示
-        if (currentFilter === "availableSoon" && !(car.status === "貸出可" || car.status === "まもなく")) {
-          return;
-        }
-
-        // 車両表示用のdiv作成
         const carDiv = document.createElement("div");
         carDiv.className = "car-item";
         carDiv.id = documentSnapshot.id;
         carDiv.style.backgroundColor = statusColors[car.status] || "white";
 
-        // 基本情報の表示
+        // 表示内容
         carDiv.innerHTML = `<strong>${car.name}</strong> <br>
-                            ランク: ${car.rank} <br>
+                            クラス: ${car.class} <br>
                             状態: ${car.status} <br>
-                            備考: ${car.remarks} <br>`;
+                            備考: ${car.remarks || ""} <br>
+                            ETC: ${car.etc ? "有" : "無"}　
+                            ナビ: ${car.nav ? "有" : "無"}　
+                            4WD: ${car.fourwd ? "有" : "無"}`;
 
-        // ETC・ナビ・４WDの表示と更新機能
-        const optionsDiv = document.createElement("div");
-        
-        // ETC
-        const etcLabel = document.createElement("label");
-        etcLabel.textContent = "ETC: ";
-        const etcCheckbox = document.createElement("input");
-        etcCheckbox.type = "checkbox";
-        etcCheckbox.checked = car.etc || false;
-        etcCheckbox.addEventListener("change", async () => {
-          const carDocRef = doc(db, "cars", documentSnapshot.id);
-          await updateDoc(carDocRef, { etc: etcCheckbox.checked });
-        });
-        etcLabel.appendChild(etcCheckbox);
-        optionsDiv.appendChild(etcLabel);
-
-        // ナビ
-        const navLabel = document.createElement("label");
-        navLabel.textContent = " ナビ: ";
-        const navCheckbox = document.createElement("input");
-        navCheckbox.type = "checkbox";
-        navCheckbox.checked = car.nav || false;
-        navCheckbox.addEventListener("change", async () => {
-          const carDocRef = doc(db, "cars", documentSnapshot.id);
-          await updateDoc(carDocRef, { nav: navCheckbox.checked });
-        });
-        navLabel.appendChild(navCheckbox);
-        optionsDiv.appendChild(navLabel);
-
-        // ４WD
-        const fourwdLabel = document.createElement("label");
-        fourwdLabel.textContent = " ４WD: ";
-        const fourwdCheckbox = document.createElement("input");
-        fourwdCheckbox.type = "checkbox";
-        fourwdCheckbox.checked = car.fourwd || false;
-        fourwdCheckbox.addEventListener("change", async () => {
-          const carDocRef = doc(db, "cars", documentSnapshot.id);
-          await updateDoc(carDocRef, { fourwd: fourwdCheckbox.checked });
-        });
-        fourwdLabel.appendChild(fourwdCheckbox);
-        optionsDiv.appendChild(fourwdLabel);
-
-        carDiv.appendChild(optionsDiv);
-
-        // 状態変更ボタン：状態をサイクルする
-        const toggleButton = document.createElement("button");
-        toggleButton.textContent = "状態変更";
-        toggleButton.className = "toggle-button";
-        toggleButton.addEventListener("click", async () => {
-          const currentIndex = statuses.indexOf(car.status);
-          const nextIndex = (currentIndex + 1) % statuses.length;
-          const newStatus = statuses[nextIndex];
-          const carDocRef = doc(db, "cars", documentSnapshot.id);
-          await updateDoc(carDocRef, { status: newStatus });
-          loadCars();
-        });
-        carDiv.appendChild(toggleButton);
-
-        // 削除ボタン（右上に✕を表示）
+        // 削除ボタン（右上に✕）
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "✕";
         deleteButton.className = "delete-button";
-        deleteButton.addEventListener("click", async () => {
-          const carDocRef = doc(db, "cars", documentSnapshot.id);
-          await deleteDoc(carDocRef);
+        deleteButton.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await deleteDoc(doc(db, "cars", documentSnapshot.id));
           loadCars();
         });
         carDiv.appendChild(deleteButton);
+
+        // タップ（短押し）と長押しのイベント設定
+        let pressTimer;
+        let longPressTriggered = false;
+        const longPressThreshold = 1000; // 1000msで長押しと判定
+
+        // 共通処理：長押しの場合、備考・ETC・ナビ・4WDを編集
+        const triggerLongPress = async () => {
+          longPressTriggered = true;
+          const newRemarks = prompt("備考を変更してください:", car.remarks || "");
+          if (newRemarks !== null) {
+            const newETC = confirm("ETCを有効にしますか？（キャンセルで無効）");
+            const newNav = confirm("ナビを有効にしますか？（キャンセルで無効）");
+            const new4WD = confirm("4WDを有効にしますか？（キャンセルで無効）");
+            await updateDoc(doc(db, "cars", documentSnapshot.id), { 
+              remarks: newRemarks, 
+              etc: newETC, 
+              nav: newNav, 
+              fourwd: new4WD 
+            });
+            loadCars();
+          }
+        };
+
+        // マウスイベント
+        carDiv.addEventListener("mousedown", (e) => {
+          longPressTriggered = false;
+          pressTimer = setTimeout(triggerLongPress, longPressThreshold);
+        });
+        carDiv.addEventListener("mouseup", (e) => {
+          clearTimeout(pressTimer);
+          if (!longPressTriggered) {
+            // 短押しなら状態変更（サイクル）
+            const currentIndex = statuses.indexOf(car.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            const newStatus = statuses[nextIndex];
+            updateDoc(doc(db, "cars", documentSnapshot.id), { status: newStatus })
+              .then(() => loadCars());
+          }
+        });
+        carDiv.addEventListener("mouseleave", (e) => {
+          clearTimeout(pressTimer);
+        });
+
+        // タッチイベント（スマホ向け）
+        carDiv.addEventListener("touchstart", (e) => {
+          longPressTriggered = false;
+          pressTimer = setTimeout(triggerLongPress, longPressThreshold);
+        });
+        carDiv.addEventListener("touchend", (e) => {
+          clearTimeout(pressTimer);
+          if (!longPressTriggered) {
+            const currentIndex = statuses.indexOf(car.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            const newStatus = statuses[nextIndex];
+            updateDoc(doc(db, "cars", documentSnapshot.id), { status: newStatus })
+              .then(() => loadCars());
+          }
+        });
 
         carListDiv.appendChild(carDiv);
       });
     }
 
+    loadCars();
+
+    // 新規追加モーダルの表示・非表示制御
+    const addCarButton = document.getElementById("add-car-button");
+    const addCarModal = document.getElementById("add-car-modal");
+    const closeModalButton = document.getElementById("close-modal");
+
+    addCarButton.addEventListener("click", () => {
+      addCarModal.style.display = "block";
+    });
+    closeModalButton.addEventListener("click", () => {
+      addCarModal.style.display = "none";
+    });
+
     // 新規車両追加フォームの送信処理
     document.getElementById("add-car-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("car-name").value;
-      const rank = parseInt(document.getElementById("car-rank").value);
+      const carClass = document.getElementById("car-class").value;
       const status = document.getElementById("car-status").value;
       const remarks = document.getElementById("car-remarks").value;
       const etc = document.getElementById("car-etc").checked;
       const nav = document.getElementById("car-nav").checked;
       const fourwd = document.getElementById("car-4wd").checked;
-      
-      await addDoc(collection(db, "cars"), { name, rank, status, remarks, etc, nav, fourwd });
+      await addDoc(collection(db, "cars"), { 
+        name, 
+        "class": carClass, 
+        status, 
+        remarks, 
+        etc, 
+        nav, 
+        fourwd 
+      });
       e.target.reset();
+      addCarModal.style.display = "none";
       loadCars();
     });
-
-    loadCars();
   </script>
 </body>
 </html>
