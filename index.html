@@ -50,6 +50,28 @@
       font-size: 1.5rem;
       font-weight: 600;
     }
+    /* 表示切替ボタン用のスタイル */
+    .view-toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .view-toggle {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: var(--white-color);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .view-toggle.active {
+      background: var(--white-color);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
     #add-car-button {
       background: var(--white-color);
       color: var(--primary-color);
@@ -567,6 +589,74 @@
     .inline-edit-modal {
       animation: modalFadeIn 0.2s;
     }
+
+    /* 簡易表示モード用のスタイル */
+    .car-item.compact {
+      padding: 8px 15px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .car-item.compact .car-status {
+      margin-bottom: 0;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      margin-right: 8px;
+    }
+    .car-item.compact .car-name {
+      font-size: 1rem;
+      margin-bottom: 0;
+      margin-right: 8px;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .car-item.compact .car-class {
+      margin-left: 0;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+    }
+    .car-item.compact .car-features {
+      margin-top: 0;
+      margin-left: 8px;
+      gap: 5px;
+    }
+    .car-item.compact .car-feature {
+      padding: 2px 5px;
+      font-size: 0.7rem;
+    }
+    .car-item.compact .car-remarks {
+      width: 100%;
+      margin-top: 5px;
+      font-size: 0.8rem;
+      padding-left: 5px;
+      border-left: 2px solid var(--light-gray-color);
+    }
+    .car-item.compact .tire-toggle {
+      padding: 2px 5px;
+      font-size: 0.7rem;
+    }
+    .car-item.compact .status-toggle {
+      position: static;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      margin-left: 5px;
+    }
+    .car-item.compact .delete-button {
+      position: static;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    .car-item.compact .features-container {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
   </style>
 </head>
 <body>
@@ -584,7 +674,11 @@
 
   <header>
     <h1>レンタカー管理システム</h1>
-    <button id="add-car-button">＋</button>
+    <div class="view-toggle-container">
+      <button class="view-toggle active" data-view="detailed">詳細表示</button>
+      <button class="view-toggle" data-view="compact">簡易表示</button>
+      <button id="add-car-button">＋</button>
+    </div>
   </header>
 
   <div class="filter-section">
@@ -741,11 +835,37 @@
       const deleteMessage = document.getElementById("delete-message");
       const cancelDelete = document.getElementById("cancel-delete");
       const confirmDelete = document.getElementById("confirm-delete");
+      const viewToggleButtons = document.querySelectorAll(".view-toggle");
 
       let selectedStatusFilters = ["all"];
       let selectedClassFilters = ["all"];
       let carToDelete = null;
       let lastUpdatedCarId = null;
+      let currentViewMode = "detailed"; // デフォルトは詳細表示
+
+      // 表示モード変更機能
+      viewToggleButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          const viewMode = button.getAttribute("data-view");
+          if (viewMode !== currentViewMode) {
+            viewToggleButtons.forEach(btn => btn.classList.remove("active"));
+            button.classList.add("active");
+            currentViewMode = viewMode;
+            // ローカルストレージに表示モードを保存
+            localStorage.setItem("carViewMode", viewMode);
+            loadCars();
+          }
+        });
+      });
+
+      // 前回使用した表示モードを読み込む
+      const savedViewMode = localStorage.getItem("carViewMode");
+      if (savedViewMode) {
+        currentViewMode = savedViewMode;
+        viewToggleButtons.forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-view") === currentViewMode);
+        });
+      }
 
       function showLoader() {
         loader.style.display = "flex";
@@ -840,29 +960,54 @@
 
       function createCarElement(car) {
         const carDiv = document.createElement("div");
-        carDiv.className = "car-item";
+        carDiv.className = `car-item ${currentViewMode === "compact" ? "compact" : ""}`;
         carDiv.id = car.id;
         carDiv.setAttribute("data-status", car.status);
         carDiv.setAttribute("data-class", car.class);
         const tireType = car.tireType || "normal";
 
-        carDiv.innerHTML = `
-          <div class="car-status" data-status="${car.status}">${car.status}</div>
-          <div class="car-name">
-            ${car.managementNumber ? `[${car.managementNumber}] ` : ""}${car.name}
-            <span class="car-class" data-class="${car.class}">${car.class}</span>
-          </div>
-          <div class="car-features">
-            <div class="car-feature ${car.etc ? 'active' : ''}">ETC</div>
-            <div class="car-feature ${car.nav ? 'active' : ''}">ナビ</div>
-            <div class="car-feature ${car.fourwd ? 'active' : ''}">4WD</div>
-            <div class="tire-toggle ${tireType === 'studless' ? 'studless' : ''}" data-car-id="${car.id}" data-tire-type="${tireType}">
-              ${tireType === 'studless' ? 'スタッドレスタイヤ' : 'ノーマルタイヤ'}
+        if (currentViewMode === "detailed") {
+          // 詳細表示モード
+          carDiv.innerHTML = `
+            <div class="car-status" data-status="${car.status}">${car.status}</div>
+            <div class="car-name">
+              ${car.managementNumber ? `[${car.managementNumber}] ` : ""}${car.name}
+              <span class="car-class" data-class="${car.class}">${car.class}</span>
             </div>
-          </div>
-          ${car.remarks ? `<div class="car-remarks">備考: ${car.remarks}</div>` : ''}
-          <button class="status-toggle" data-car-id="${car.id}">状態変更</button>
-        `;
+            <div class="car-features">
+              <div class="car-feature ${car.etc ? 'active' : ''}">ETC</div>
+              <div class="car-feature ${car.nav ? 'active' : ''}">ナビ</div>
+              <div class="car-feature ${car.fourwd ? 'active' : ''}">4WD</div>
+              <div class="tire-toggle ${tireType === 'studless' ? 'studless' : ''}" data-car-id="${car.id}" data-tire-type="${tireType}">
+                ${tireType === 'studless' ? 'スタッドレスタイヤ' : 'ノーマルタイヤ'}
+              </div>
+            </div>
+            ${car.remarks ? `<div class="car-remarks">備考: ${car.remarks}</div>` : ''}
+            <button class="status-toggle" data-car-id="${car.id}">状態変更</button>
+          `;
+        } else {
+          // 簡易表示モード
+          carDiv.innerHTML = `
+            <div class="car-status" data-status="${car.status}">${car.status}</div>
+            <div class="car-name">
+              ${car.managementNumber ? `[${car.managementNumber}] ` : ""}${car.name}
+            </div>
+            <span class="car-class" data-class="${car.class}">${car.class}</span>
+            <div class="features-container">
+              <div class="car-features">
+                ${car.etc ? '<div class="car-feature active">ETC</div>' : ''}
+                ${car.nav ? '<div class="car-feature active">ナビ</div>' : ''}
+                ${car.fourwd ? '<div class="car-feature active">4WD</div>' : ''}
+              </div>
+              <div class="tire-toggle ${tireType === 'studless' ? 'studless' : ''}" data-car-id="${car.id}" data-tire-type="${tireType}">
+                ${tireType === 'studless' ? 'スタッドレス' : 'ノーマル'}
+              </div>
+              <button class="status-toggle" data-car-id="${car.id}">状態</button>
+              <button class="delete-button">✕</button>
+            </div>
+            ${car.remarks ? `<div class="car-remarks">${car.remarks}</div>` : ''}
+          `;
+        }
 
         const editModalDiv = document.createElement("div");
         editModalDiv.className = "inline-edit-modal";
@@ -957,7 +1102,9 @@
           try {
             await updateDoc(doc(db, "cars", car.id), { tireType: newType });
             tireToggle.setAttribute('data-tire-type', newType);
-            tireToggle.textContent = newType === 'studless' ? 'スタッドレスタイヤ' : 'ノーマルタイヤ';
+            tireToggle.textContent = newType === 'studless' ? 
+              (currentViewMode === 'compact' ? 'スタッドレス' : 'スタッドレスタイヤ') : 
+              (currentViewMode === 'compact' ? 'ノーマル' : 'ノーマルタイヤ');
             tireToggle.classList.toggle('studless', newType === 'studless');
             hideLoader();
           } catch (error) {
@@ -967,16 +1114,19 @@
           }
         });
 
-        const deleteButton = document.createElement("button");
-        deleteButton.innerHTML = "✕";
-        deleteButton.className = "delete-button";
+        const deleteButton = carDiv.querySelector(".delete-button") || document.createElement("button");
+        if (!carDiv.querySelector(".delete-button")) {
+          deleteButton.innerHTML = "✕";
+          deleteButton.className = "delete-button";
+          carDiv.appendChild(deleteButton);
+        }
+        
         deleteButton.addEventListener("click", (e) => {
           e.stopPropagation();
           carToDelete = car;
           deleteMessage.textContent = `${car.name}を削除してもよろしいですか？`;
           deleteConfirm.style.display = "flex";
         });
-        carDiv.appendChild(deleteButton);
 
         const closeEditModalButton = carDiv.querySelector('.close-modal');
         closeEditModalButton.addEventListener('click', (e) => {
