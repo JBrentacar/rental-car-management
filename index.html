@@ -339,6 +339,8 @@
       color: var(--dark-color);
     }
     input[type="text"],
+    input[type="email"],
+    input[type="password"],
     select {
       padding: 12px;
       border: 1px solid #ddd;
@@ -347,6 +349,8 @@
       transition: var(--transition);
     }
     input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
     select:focus {
       border-color: var(--primary-color);
       outline: none;
@@ -528,8 +532,18 @@
       border-radius: var(--radius);
       text-align: center;
       box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 400px;
     }
-    #google-signin-button {
+    #login-box h2 {
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+    }
+    #login-box input {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    #login-button {
       background: var(--primary-color);
       color: white;
       border: none;
@@ -538,8 +552,9 @@
       border-radius: var(--radius);
       cursor: pointer;
       transition: var(--transition);
+      width: 100%;
     }
-    #google-signin-button:hover {
+    #login-button:hover {
       background: var(--secondary-color);
     }
     .car-item.highlighted {
@@ -555,11 +570,15 @@
   </style>
 </head>
 <body>
-  <!-- ログイン用オーバーレイ -->
+  <!-- ログイン用オーバーレイ（メール/パスワード） -->
   <div id="login-container">
     <div id="login-box">
       <h2>ログインが必要です</h2>
-      <button id="google-signin-button">Googleでログイン</button>
+      <form id="login-form">
+        <input type="email" id="login-email" placeholder="メールアドレス" required>
+        <input type="password" id="login-password" placeholder="パスワード" required>
+        <button type="submit" id="login-button">ログイン</button>
+      </form>
     </div>
   </div>
 
@@ -681,7 +700,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
     import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAfm605JtkOOyqv-dLxtoE5neHUSvjxzbg",
@@ -692,18 +711,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
 
-    // Googleサインイン処理
-    document.getElementById("google-signin-button").addEventListener("click", () => {
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          // サインイン成功時は onAuthStateChanged で処理
-        })
-        .catch(error => {
-          console.error("Googleサインインエラー:", error);
-          alert("ログインに失敗しました");
-        });
+    // ログインフォームの処理（メール/パスワード認証）
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged で処理します
+      } catch (error) {
+        console.error("ログインエラー:", error);
+        alert("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
+      }
     });
 
     // メインアプリ初期化（レンタカー管理システムの機能）
@@ -737,7 +757,6 @@
       async function loadCars() {
         showLoader();
         carListDiv.innerHTML = "";
-
         try {
           const querySnapshot = await getDocs(collection(db, "cars"));
           let cars = [];
@@ -1241,7 +1260,7 @@
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (!userDocSnap.exists()) {
-          await setDoc(userDocRef, { approved: false, email: user.email, name: user.displayName });
+          await setDoc(userDocRef, { approved: false, email: user.email, name: user.displayName || user.email });
           alert("このユーザーはまだ承認されていません。管理者にお問い合わせください。");
           signOut(auth);
           return;
