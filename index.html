@@ -800,7 +800,8 @@
     let currentUserName = "";
 
     // Firestore 上で "metadata/devices/{deviceId}" ドキュメントとして管理
-    const deviceDocRef = doc(db, "metadata", "devices", deviceId);
+  const deviceDocRef = doc(db, "metadata/devices", deviceId);
+
 
     // 最終更新情報 (今回は "metadata/lastUpdate" として管理)
     const lastUpdateDocRef = doc(db, "metadata", "lastUpdate");
